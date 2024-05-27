@@ -45,14 +45,24 @@ class Detect(nn.Module):
         shape = x[0].shape  # BCHW
 
         if self.export and self.format == 'rknn':
-            y = []
+            bbox = []
             for i in range(self.nl):
-                y.append(self.cv2[i](x[i]))
+                bbox.append(self.cv2[i](x[i]))
                 cls = torch.sigmoid(self.cv3[i](x[i]))
                 cls_sum = torch.clamp(cls.sum(1, keepdim=True), 0, 1)
-                y.append(cls)
-                y.append(cls_sum)
-            return y
+                bbox.append(cls)
+                bbox.append(cls_sum)
+
+            bboxes_combined = []
+            pair = 3
+            for i in range(pair):
+                combined_tensor = torch.cat([bbox[pair * i + 1], bbox[pair * i]], dim=1)
+                bboxes_combined.append(combined_tensor)
+
+            first = bboxes_combined[0]
+            second = bboxes_combined[1]
+            third = bboxes_combined[2]
+            return first, second, third
 
         for i in range(self.nl):
             x[i] = torch.cat((self.cv2[i](x[i]), self.cv3[i](x[i])), 1)
@@ -145,6 +155,7 @@ class Pose(Detect):
 
     def forward(self, x):
         """Perform forward pass through YOLO model and return predictions."""
+
         bs = x[0].shape[0]  # batch size
         if self.export and self.format == 'rknn':
             kpt = [self.cv4[i](x[i]) for i in range(self.nl)]  # Collecting the raw output from convolutional layers
@@ -155,13 +166,12 @@ class Pose(Detect):
         if self.training:
             return x, kpt
         if self.export and self.format == 'rknn':
-
-            bbox = x
+            bbox_pairs = x
 
             bboxes_combined = []
-            pair = 3
-            for i in range(3):
-                combined_tensor = torch.cat([bbox[pair * i + 1], bbox[pair * i], kpt[i]], dim=1)
+            # pair = 3
+            for index,bbox in enumerate(bbox_pairs):
+                combined_tensor = torch.cat([bbox, kpt[index]], dim=1)
                 bboxes_combined.append(combined_tensor)
 
             first = bboxes_combined[0]
