@@ -1,6 +1,6 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
-__version__ = '11.0.5'
+__version__ = '11.0.6'
 
 from ultralytics.hub import start
 from ultralytics.models import RTDETR, SAM, YOLO
