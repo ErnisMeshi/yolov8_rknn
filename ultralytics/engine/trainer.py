@@ -392,7 +392,7 @@ class BaseTrainer:
             if self.stop:
                 break  # must break all DDP ranks
 
-        if RANK in (-1, 0) and False:
+        if RANK in (-1, 0):
             # Do final val with best.pt
             LOGGER.info(f'\n{epoch - self.start_epoch + 1} epochs completed in '
                         f'{(time.time() - self.train_time_start) / 3600:.3f} hours.')
